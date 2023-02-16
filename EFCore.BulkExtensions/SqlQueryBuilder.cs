@@ -174,13 +174,8 @@ namespace EFCore.BulkExtensions
                 insertColumnsNames = insertColumnsNames.Where(a => !defaults.Contains(a)).ToList();
             }
 
-            string isUpdateStatsValue = (tableInfo.BulkConfig.CalculateStats) ? ",(CASE $action WHEN 'UPDATE' THEN 1 Else 0 END),(CASE $action WHEN 'DELETE' THEN 1 Else 0 END)" : "";
-
-            if (tableInfo.BulkConfig.PreserveInsertOrder)
-            {
-                var orderBy = (primaryKeys.Count() == 0) ? "" : $"ORDER BY {GetCommaSeparatedColumns(primaryKeys)}";
-                sourceTable = $"(SELECT TOP {tableInfo.NumberOfEntities} * FROM {sourceTable} {orderBy})";
-            }
+            string isUpdateStatsValue = (tableInfo.BulkConfig.CalculateStats) ? 
+                ",(CASE $action WHEN 'UPDATE' THEN 1 Else 0 END),(CASE $action WHEN 'DELETE' THEN 1 Else 0 END)" : string.Empty;
 
             if (tableInfo.BulkConfig.PreserveInsertOrder)
             {

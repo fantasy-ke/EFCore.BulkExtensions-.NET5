@@ -122,7 +122,7 @@ namespace EFCore.BulkExtensions.SQLAdapters.SQLServer
         protected async Task MergeAsync<T>(DbContext context, Type type, IList<T> entities, TableInfo tableInfo, OperationType operationType, Action<decimal> progress, CancellationToken cancellationToken, bool isAsync) where T : class
         {
             tableInfo.InsertToTempTable = true;
-            var entityPropertyWithDefaultValue = entities.GetPropertiesWithDefaultValue(type);
+            var entityPropertyWithDefaultValue = entities.GetPropertiesWithDefaultValue(type,tableInfo);
 
             var dropTempTableIfExists = tableInfo.BulkConfig.UseTempDB;
 

@@ -19,44 +19,44 @@ namespace EFCore.BulkExtensions.Tests
 {
     public class TestContext : DbContext
     {
-        public DbSet<Item> Items { get; set; }
-        public DbSet<ItemHistory> ItemHistories { get; set; }
+        //public DbSet<Item> Items { get; set; }
+        //public DbSet<ItemHistory> ItemHistories { get; set; }
 
-        public DbSet<UserRole> UserRoles { get; set; }
+        //public DbSet<UserRole> UserRoles { get; set; }
 
         public DbSet<Documents> Documents { get; set; }
-        public DbSet<File> Files { get; set; }
-        public DbSet<Person> Persons { get; set; }
-        public DbSet<Student> Students { get; set; }
-        public DbSet<Teacher> Teachers { get; set; }
-        public DbSet<Modul> Moduls { get; set; }
-        public DbSet<Info> Infos { get; set; }
-        public DbSet<ChangeLog> ChangeLogs { get; set; }
-        public DbSet<ItemLink> ItemLinks { get; set; }
-        public DbSet<Address> Addresses { get; set; }
+        //public DbSet<File> Files { get; set; }
+        //public DbSet<Person> Persons { get; set; }
+        //public DbSet<Student> Students { get; set; }
+        //public DbSet<Teacher> Teachers { get; set; }
+        //public DbSet<Modul> Moduls { get; set; }
+        //public DbSet<Info> Infos { get; set; }
+        //public DbSet<ChangeLog> ChangeLogs { get; set; }
+        //public DbSet<ItemLink> ItemLinks { get; set; }
+        //public DbSet<Address> Addresses { get; set; }
 
-        public DbSet<Parent> Parents { get; set; }
-        public DbSet<ParentDetail> ParentDetails { get; set; }
-        public DbSet<Child> Children { get; set; }
+        //public DbSet<Parent> Parents { get; set; }
+        //public DbSet<ParentDetail> ParentDetails { get; set; }
+        //public DbSet<Child> Children { get; set; }
 
-        public DbSet<Animal> Animals { get; set; }
+        //public DbSet<Animal> Animals { get; set; }
 
-        public DbSet<Setting> Settings { get; set; }
+        //public DbSet<Setting> Settings { get; set; }
 
-        public DbSet<LogPersonReport> LogPersonReports { get; set; }
+        //public DbSet<LogPersonReport> LogPersonReports { get; set; }
 
-        public DbSet<AtypicalRowVersionEntity> AtypicalRowVersionEntities { get; set; }
+        //public DbSet<AtypicalRowVersionEntity> AtypicalRowVersionEntities { get; set; }
 
-        public DbSet<AtypicalRowVersionConverterEntity> AtypicalRowVersionConverterEntities { get; set; }
+        //public DbSet<AtypicalRowVersionConverterEntity> AtypicalRowVersionConverterEntities { get; set; }
 
-        public DbSet<Event> Events { get; set; }
+        //public DbSet<Event> Events { get; set; }
 
-        public DbSet<Archive> Archives { get; set; }
+        //public DbSet<Archive> Archives { get; set; }
 
-        public DbSet<Source> Sources { get; set; }
+        //public DbSet<Source> Sources { get; set; }
 
-        public DbSet<Department> Departments { get; set; }
-        public DbSet<Division> Divisions { get; set; }
+        //public DbSet<Department> Departments { get; set; }
+        //public DbSet<Division> Divisions { get; set; }
 
         public TestContext(DbContextOptions options) : base(options)
         {
@@ -71,26 +71,26 @@ namespace EFCore.BulkExtensions.Tests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.RemovePluralizingTableNameConvention();
+            //modelBuilder.RemovePluralizingTableNameConvention();
 
-            modelBuilder.Entity<UserRole>().HasKey(a => new { a.UserId, a.RoleId });
+            //modelBuilder.Entity<UserRole>().HasKey(a => new { a.UserId, a.RoleId });
 
-            modelBuilder.Entity<Info>(e => { e.Property(p => p.ConvertedTime).HasConversion((value) => value.AddDays(1), (value) => value.AddDays(-1)); });
-            modelBuilder.Entity<Info>().Property(e => e.InfoType).HasConversion(new EnumToStringConverter<InfoType>());
+            //modelBuilder.Entity<Info>(e => { e.Property(p => p.ConvertedTime).HasConversion((value) => value.AddDays(1), (value) => value.AddDays(-1)); });
+            //modelBuilder.Entity<Info>().Property(e => e.InfoType).HasConversion(new EnumToStringConverter<InfoType>());
 
-            modelBuilder.Entity<Info>(e => { e.Property("LogData"); });
-            modelBuilder.Entity<Info>(e => { e.Property("TimeCreated"); });
-            modelBuilder.Entity<Info>(e => { e.Property("Remark"); });
+            //modelBuilder.Entity<Info>(e => { e.Property("LogData"); });
+            //modelBuilder.Entity<Info>(e => { e.Property("TimeCreated"); });
+            //modelBuilder.Entity<Info>(e => { e.Property("Remark"); });
 
-            modelBuilder.Entity<ChangeLog>().OwnsOne(e => e.Audit, b => b.Property(e => e.InfoType).HasConversion(new EnumToStringConverter<InfoType>()));
+            //modelBuilder.Entity<ChangeLog>().OwnsOne(e => e.Audit, b => b.Property(e => e.InfoType).HasConversion(new EnumToStringConverter<InfoType>()));
 
-            modelBuilder.Entity<Person>().HasIndex(a => a.Name).IsUnique(); // In SQLite UpdateByColumn(nonPK) requires it has UniqueIndex
+            //modelBuilder.Entity<Person>().HasIndex(a => a.Name).IsUnique(); // In SQLite UpdateByColumn(nonPK) requires it has UniqueIndex
 
             modelBuilder.Entity<Documents>().Property(p => p.IsActive).HasDefaultValue(true);
             modelBuilder.Entity<Documents>().Property(p => p.Tag).HasDefaultValue("DefaultData");
 
-            modelBuilder.Entity<Log>().ToTable("Log");
-            modelBuilder.Entity<LogPersonReport>().ToTable("LogPersonReport");
+            //modelBuilder.Entity<Log>().ToTable("Log");
+            //modelBuilder.Entity<LogPersonReport>().ToTable("LogPersonReport");
 
             if (Database.IsSqlServer())
             {
@@ -103,29 +103,29 @@ namespace EFCore.BulkExtensions.Tests
                 modelBuilder.Entity<Division>().Property(p => p.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
                 modelBuilder.Entity<Department>().Property(p => p.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
             }
-            else if (Database.IsSqlite())
-            {
-                modelBuilder.Entity<File>().Property(p => p.VersionChange).ValueGeneratedOnAddOrUpdate().IsConcurrencyToken().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            //else if (Database.IsSqlite())
+            //{
+            //    modelBuilder.Entity<File>().Property(p => p.VersionChange).ValueGeneratedOnAddOrUpdate().IsConcurrencyToken().HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                modelBuilder.Entity<Address>().Ignore(p => p.LocationGeography);
-                modelBuilder.Entity<Address>().Ignore(p => p.LocationGeometry);
+            //    modelBuilder.Entity<Address>().Ignore(p => p.LocationGeography);
+            //    modelBuilder.Entity<Address>().Ignore(p => p.LocationGeometry);
 
-                modelBuilder.Entity<ItemHistory>().ToTable(nameof(ItemHistory));
-            }
+            //    modelBuilder.Entity<ItemHistory>().ToTable(nameof(ItemHistory));
+            //}
 
-            //modelBuilder.Entity<Modul>(buildAction => { buildAction.HasNoKey(); });
-            modelBuilder.Entity<Modul>().Property(et => et.Code).ValueGeneratedNever();
+            ////modelBuilder.Entity<Modul>(buildAction => { buildAction.HasNoKey(); });
+            //modelBuilder.Entity<Modul>().Property(et => et.Code).ValueGeneratedNever();
 
-            modelBuilder.Entity<Setting>().Property(e => e.Settings).HasConversion<string>();
+            //modelBuilder.Entity<Setting>().Property(e => e.Settings).HasConversion<string>();
 
-            modelBuilder.Entity<AtypicalRowVersionEntity>().HasKey(e => e.Id);
-            modelBuilder.Entity<AtypicalRowVersionEntity>().Property(e => e.RowVersion).HasDefaultValue(0).IsConcurrencyToken().ValueGeneratedOnAddOrUpdate().Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Save);
-            modelBuilder.Entity<AtypicalRowVersionEntity>().Property(e => e.SyncDevice).IsRequired(true).IsConcurrencyToken().HasDefaultValue("");
+            //modelBuilder.Entity<AtypicalRowVersionEntity>().HasKey(e => e.Id);
+            //modelBuilder.Entity<AtypicalRowVersionEntity>().Property(e => e.RowVersion).HasDefaultValue(0).IsConcurrencyToken().ValueGeneratedOnAddOrUpdate().Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Save);
+            //modelBuilder.Entity<AtypicalRowVersionEntity>().Property(e => e.SyncDevice).IsRequired(true).IsConcurrencyToken().HasDefaultValue("");
 
-            modelBuilder.Entity<AtypicalRowVersionConverterEntity>().Property(e => e.RowVersionConverted).HasConversion(new NumberToBytesConverter<long>()).HasColumnType("timestamp").IsRowVersion().IsConcurrencyToken();
+            //modelBuilder.Entity<AtypicalRowVersionConverterEntity>().Property(e => e.RowVersionConverted).HasConversion(new NumberToBytesConverter<long>()).HasColumnType("timestamp").IsRowVersion().IsConcurrencyToken();
 
-            modelBuilder.Entity<Parent>().Property(parent => parent.PhoneNumber)
-                .HasColumnType("varchar(12)").HasMaxLength(12).HasField("_phoneNumber").IsRequired();
+            //modelBuilder.Entity<Parent>().Property(parent => parent.PhoneNumber)
+            //    .HasColumnType("varchar(12)").HasMaxLength(12).HasField("_phoneNumber").IsRequired();
 
             //modelBuilder.Entity<Person>().HasDiscriminator<string>("Discriminator").HasValue<Student>("Student").HasValue<Teacher>("Teacher"); // name of classes are default values
 
@@ -195,6 +195,11 @@ namespace EFCore.BulkExtensions.Tests
                 //string connectionString = (new SqliteConnectionStringBuilder { DataSource = $"{databaseName}Lite.db" }).ToString();
                 //optionsBuilder.UseSqlite(new SqliteConnection(connectionString));
             }
+            else if (dbServerType == DbServerType.MySQL)
+            {
+                string connectionString = GetMySqlConnectionString(databaseName);
+                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            }
             else
             {
                 throw new NotSupportedException($"Database {dbServerType} is not supported. Only SQL Server and SQLite are Currently supported.");
@@ -219,12 +224,17 @@ namespace EFCore.BulkExtensions.Tests
 
         public static string GetSqlServerConnectionString(string databaseName)
         {
-            return GetConfiguration().GetConnectionString("SqlServer").Replace("{databaseName}", databaseName);
+            return GetConfiguration().GetConnectionString("SqlServer");
         }
 
         public static string GetSqliteConnectionString(string databaseName)
         {
             return GetConfiguration().GetConnectionString("Sqlite").Replace("{databaseName}", databaseName);
+        }
+
+        public static string GetMySqlConnectionString(string databaseName)
+        {
+            return GetConfiguration().GetConnectionString("MySql");
         }
     }
 
