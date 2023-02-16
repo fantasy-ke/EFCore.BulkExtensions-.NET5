@@ -10,9 +10,9 @@ namespace EFCore.BulkExtensions.Tests.ShadowProperties
     public class ShadowPropertyTests : IDisposable
     {
         [Theory]
-        [InlineData(DbServer.SqlServer)]
-        [InlineData(DbServer.Sqlite)]
-        public void BulkInsertOrUpdate_EntityWithShadowProperties_SavesToDatabase(DbServer dbServer)
+        [InlineData(DbServerType.SQLServer)]
+        [InlineData(DbServerType.SQLite)]
+        public void BulkInsertOrUpdate_EntityWithShadowProperties_SavesToDatabase(DbServerType dbServer)
         {
             ContextUtil.DbServer = dbServer;
 

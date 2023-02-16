@@ -1,4 +1,8 @@
 using EFCore.BulkExtensions.SqlAdapters;
+using EFCore.BulkExtensions.SqlAdapters.MySql;
+using EFCore.BulkExtensions.SqlAdapters.SQLite;
+using EFCore.BulkExtensions.SQLAdapters;
+using EFCore.BulkExtensions.SQLAdapters.SQLServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -20,7 +24,7 @@ namespace EFCore.BulkExtensions.Tests
 
         public DbSet<UserRole> UserRoles { get; set; }
 
-        public DbSet<Document> Documents { get; set; }
+        public DbSet<Documents> Documents { get; set; }
         public DbSet<File> Files { get; set; }
         public DbSet<Person> Persons { get; set; }
         public DbSet<Student> Students { get; set; }
@@ -82,16 +86,15 @@ namespace EFCore.BulkExtensions.Tests
 
             modelBuilder.Entity<Person>().HasIndex(a => a.Name).IsUnique(); // In SQLite UpdateByColumn(nonPK) requires it has UniqueIndex
 
-            modelBuilder.Entity<Document>().Property(p => p.IsActive).HasDefaultValue(true);
-            modelBuilder.Entity<Document>().Property(p => p.Tag).HasDefaultValue("DefaultData");
+            modelBuilder.Entity<Documents>().Property(p => p.IsActive).HasDefaultValue(true);
+            modelBuilder.Entity<Documents>().Property(p => p.Tag).HasDefaultValue("DefaultData");
 
             modelBuilder.Entity<Log>().ToTable("Log");
             modelBuilder.Entity<LogPersonReport>().ToTable("LogPersonReport");
 
             if (Database.IsSqlServer())
             {
-                modelBuilder.Entity<Document>().Property(p => p.DocumentId).HasDefaultValueSql("NEWID()");
-                modelBuilder.Entity<Document>().Property(p => p.ContentLength).HasComputedColumnSql($"(CONVERT([int], len([{nameof(Document.Content)}])))");
+                modelBuilder.Entity<Documents>().HasKey(p => p.DocumentId);
 
                 modelBuilder.Entity<UdttIntInt>(entity => { entity.HasNoKey(); });
 
@@ -137,7 +140,28 @@ namespace EFCore.BulkExtensions.Tests
     {
         // TODO: Pass DbService through all the GetOptions methods as a parameter and eliminate this property so the automated tests
         // are thread safe
-        public static DbServer DbServer { get; set; }
+        static IDbServer? _dbServerMapping;
+        static DbServerType _dbServerValue;
+
+        // TODO: Pass DbService through all the GetOptions methods as a parameter and eliminate this property so the automated tests
+        // are thread safe
+        public static DbServerType DbServer
+        {
+            get => _dbServerValue;
+            set
+            {
+                _dbServerValue = value;
+                _dbServerMapping = value switch
+                {
+                    DbServerType.SQLServer => new SqlServerDbServer(),
+                    DbServerType.SQLite => new SqlLiteDbServer(),
+                    // DbServerType.PostgreSQL => new SqlAdapters.PostgreSql.PostgreSqlDbServer(),
+                    DbServerType.MySQL => new MySqlDbServer(),
+                    //DbServerType.Oracle => new SqlAdapters.Oracle.OracleDbServer(),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+        }
 
         public static DbContextOptions GetOptions(IInterceptor dbInterceptor) => GetOptions(new[] { dbInterceptor });
         public static DbContextOptions GetOptions(IEnumerable<IInterceptor> dbInterceptors = null) => GetOptions<TestContext>(dbInterceptors);
@@ -146,12 +170,12 @@ namespace EFCore.BulkExtensions.Tests
             where TDbContext : DbContext
             => GetOptions<TDbContext>(ContextUtil.DbServer, dbInterceptors, databaseName);
 
-        public static DbContextOptions GetOptions<TDbContext>(DbServer dbServerType, IEnumerable<IInterceptor> dbInterceptors = null, string databaseName = nameof(EFCoreBulkTest))
+        public static DbContextOptions GetOptions<TDbContext>(DbServerType dbServerType, IEnumerable<IInterceptor> dbInterceptors = null, string databaseName = nameof(EFCoreBulkTest))
             where TDbContext : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<TDbContext>();
 
-            if (dbServerType == DbServer.SqlServer)
+            if (dbServerType == DbServerType.SQLServer)
             {
                 var connectionString = GetSqlServerConnectionString(databaseName);
 
@@ -161,7 +185,7 @@ namespace EFCore.BulkExtensions.Tests
                 //optionsBuilder.UseSqlServer(connectionString); // Can NOT Test with UseInMemoryDb (Exception: Relational-specific methods can only be used when the context is using a relational)
                 optionsBuilder.UseSqlServer(connectionString, opt => opt.UseNetTopologySuite()); // NetTopologySuite for Geometry / Geometry types
             }
-            else if (dbServerType == DbServer.Sqlite)
+            else if (dbServerType == DbServerType.SQLite)
             {
                 string connectionString = GetSqliteConnectionString(databaseName);
                 optionsBuilder.UseSqlite(connectionString);
@@ -295,7 +319,7 @@ namespace EFCore.BulkExtensions.Tests
     }
 
     // For testing Computed columns Default values
-    public class Document
+    public class Documents
     {
         //[DefaultValueSql("NEWID()")] // no native [DefaultValueSql] annotation so this is configured via FluentAPI in modelBuilder
         public Guid DocumentId { get; set; }

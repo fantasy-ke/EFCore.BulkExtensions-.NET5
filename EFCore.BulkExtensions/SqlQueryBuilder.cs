@@ -182,6 +182,15 @@ namespace EFCore.BulkExtensions
                 sourceTable = $"(SELECT TOP {tableInfo.NumberOfEntities} * FROM {sourceTable} {orderBy})";
             }
 
+            if (tableInfo.BulkConfig.PreserveInsertOrder)
+            {
+                int numberOfEntities = tableInfo.BulkConfig.CustomSourceTableName == null
+                    ? tableInfo.NumberOfEntities
+                    : int.MaxValue;
+                var orderBy = (primaryKeys.Count == 0) ? string.Empty : $"ORDER BY {GetCommaSeparatedColumns(primaryKeys)}";
+                sourceTable = $"(SELECT TOP {numberOfEntities} * FROM {sourceTable} {orderBy})";
+            }
+
             string textWITH_HOLDLOCK = tableInfo.BulkConfig.WithHoldlock ? " WITH (HOLDLOCK)" : "";
 
             var q = $"MERGE {targetTable}{textWITH_HOLDLOCK} AS T " +
@@ -261,6 +270,38 @@ namespace EFCore.BulkExtensions
                      $" INTO {tableInfo.FullTempOutputTableName}";
             }
             q += ";";
+
+            Dictionary<string, string> sourceDestinationMappings = tableInfo.BulkConfig.CustomSourceDestinationMappingColumns ?? new();
+            if (tableInfo.BulkConfig.CustomSourceTableName != null
+                && sourceDestinationMappings != null
+                && sourceDestinationMappings.Count > 0)
+            {
+                var textOrderBy = "ORDER BY ";
+                var textAsS = " AS S";
+                int startIndex = q.IndexOf(textOrderBy);
+                var qSegment = q[startIndex..q.IndexOf(textAsS)];
+                var qSegmentUpdated = qSegment;
+                foreach (var mapping in sourceDestinationMappings)
+                {
+                    var propertySourceFormated = $"S.[{mapping.Value}]";
+                    var propertyFormated = $"[{mapping.Value}]";
+                    var sourceProperty = mapping.Key;
+
+                    if (q.Contains(propertySourceFormated))
+                    {
+                        q = q.Replace(propertySourceFormated, $"S.[{sourceProperty}]");
+                    }
+                    if (qSegment.Contains(propertyFormated))
+                    {
+                        qSegmentUpdated = qSegmentUpdated.Replace(propertyFormated, $"[{sourceProperty}]");
+                    }
+                }
+                if (qSegment != qSegmentUpdated)
+                {
+                    q = q.Replace(qSegment, qSegmentUpdated);
+                }
+            }
+
             return (sql: q, parameters: parameters);
         }
 

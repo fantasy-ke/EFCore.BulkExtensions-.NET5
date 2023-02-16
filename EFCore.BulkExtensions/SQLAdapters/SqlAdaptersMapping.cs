@@ -1,54 +1,170 @@
-﻿using EFCore.BulkExtensions.SQLAdapters.SQLite;
+﻿using EFCore.BulkExtensions.SqlAdapters.MySql;
+using EFCore.BulkExtensions.SQLAdapters;
+using EFCore.BulkExtensions.SQLAdapters.SQLite;
 using EFCore.BulkExtensions.SQLAdapters.SQLServer;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace EFCore.BulkExtensions.SqlAdapters
 {
-    public enum DbServer
+    /// <summary>
+    /// A list of database servers supported by EFCore.BulkExtensions
+    /// </summary>
+    public enum DbServerType
     {
-        SqlServer,
-        Sqlite,
-        //PostgreSql, // ProviderName can be added as  optional Attribute of Enum so it can be defined when not the same, like Npgsql for PostgreSql
-        //MySql,
+        /// <summary>
+        /// Indicates database is Microsoft's SQL Server
+        /// </summary>
+        [Description("SqlServer")]
+        SQLServer,
+
+        /// <summary>
+        /// Indicates database is SQL Lite
+        /// </summary>
+        [Description("SQLite")]
+        SQLite,
+
+        /// <summary>
+        /// Indicates database is Postgres
+        /// </summary>
+        [Description("PostgreSql")]
+        PostgreSQL,
+
+        /// <summary>
+        ///  Indicates database is MySQL
+        /// </summary>
+        [Description("MySql")]
+        MySQL,
+
+        /// <summary>
+        /// Indicates database is MySQL
+        /// </summary>
+        [Description("Oracle")]
+        Oracle
     }
+
 
     public static class SqlAdaptersMapping
     {
-        public static readonly Dictionary<DbServer, ISqlOperationsAdapter> SqlOperationAdapterMapping =
-            new Dictionary<DbServer, ISqlOperationsAdapter>
+
+        public static string? ProviderName { get; set; }
+
+        public static DbServerType DbServerType { get; set; }
+
+        private static IDbServer? _dbServer { get; set; }
+
+        /// <summary>
+        /// Contains a list of methods to generate Adapters and helpers instances
+        /// </summary>
+        public static IDbServer? DbServer
+        {
+            get
             {
-                {DbServer.Sqlite, new SqLiteOperationsAdapter()},
-                {DbServer.SqlServer, new SqlOperationsServerAdapter()}
-            };
+                //Context.Database. methods: -IsSqlServer() -IsNpgsql() -IsMySql() -IsSqlite() requires specific provider so instead here used -ProviderName
 
-        public static readonly Dictionary<DbServer, IQueryBuilderSpecialization> SqlQueryBuilderSpecializationMapping =
-            new Dictionary<DbServer, IQueryBuilderSpecialization>
-            {
-                {DbServer.Sqlite, new SqLiteDialect()},
-                {DbServer.SqlServer, new SqlServerDialect()}
-            };
+                DbServerType serverType = DbServerType.SQLServer;
+                if (ProviderName?.ToLower().EndsWith(DbServerType.PostgreSQL.ToString().ToLower()) ?? false)
+                {
+                    serverType = DbServerType.PostgreSQL;
+                }
+                else if (ProviderName?.ToLower().EndsWith(DbServerType.MySQL.ToString().ToLower()) ?? false)
+                {
+                    serverType = DbServerType.MySQL;
+                }
+                else if (ProviderName?.ToLower().EndsWith(DbServerType.SQLite.ToString().ToLower()) ?? false)
+                {
+                    serverType = DbServerType.SQLite;
+                }
+                else if (ProviderName?.ToLower().StartsWith(DbServerType.Oracle.ToString().ToLower()) ?? false)
+                {
+                    serverType = DbServerType.Oracle;
+                }
 
-        public static ISqlOperationsAdapter CreateBulkOperationsAdapter(DbContext context)
+                if (_dbServer == null || _dbServer.Type != serverType)
+                {
+                    string EFCoreBulkExtensionsSqlAdaptersTEXT = "EFCore.BulkExtensions.SQLAdapters";
+                    Type? dbServerType = null;
+
+                    if (serverType == DbServerType.SQLServer)
+                    {
+                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".SQLServer.SqlServerDbServer");
+                    }
+                    else if (serverType == DbServerType.PostgreSQL)
+                    {
+                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".PostgreSql.PostgreSqlDbServer");
+                    }
+                    else if (serverType == DbServerType.MySQL)
+                    {
+                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".MySql.MySqlDbServer");
+                    }
+                    else if (serverType == DbServerType.SQLite)
+                    {
+                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".SQLite.SqlLiteDbServer");
+                    }
+                    else if (serverType == DbServerType.Oracle)
+                    {
+                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".Oracle.OracleDbServerType");
+                    }
+
+                    var DbServerTypeInstance = Activator.CreateInstance(dbServerType ?? typeof(int));
+                    _dbServer = DbServerTypeInstance as IDbServer;
+                }
+                return _dbServer;
+            }
+        }
+        //public static ISqlOperationsAdapter CreateBulkOperationsAdapter(DbContext context)
+        //{
+        //    var providerType = GetDatabaseType(context);
+        //    return SqlOperationAdapterMapping[providerType];
+        //}
+
+        //public static IQueryBuilderSpecialization GetAdapterDialect(DbContext context)
+        //{
+        //    var providerType = GetDatabaseType(context);
+        //    return GetAdapterDialect(providerType);
+        //}
+
+        //public static IQueryBuilderSpecialization GetAdapterDialect(DbServerType providerType)
+        //{
+        //    return SqlQueryBuilderSpecializationMapping[providerType];
+        //}
+
+        /// <summary>
+        /// Creates the bulk operations adapter
+        /// </summary>
+        /// <returns></returns>
+        public static ISqlOperationsAdapter CreateBulkOperationsAdapter()
         {
-            var providerType = GetDatabaseType(context);
-            return SqlOperationAdapterMapping[providerType];
+            return DbServer!.Adapter;
         }
 
-        public static IQueryBuilderSpecialization GetAdapterDialect(DbContext context)
+        /// <summary>
+        /// Returns the Adapter dialect to be used
+        /// </summary>
+        /// <returns></returns>
+        public static IQueryBuilderSpecialization GetAdapterDialect()
         {
-            var providerType = GetDatabaseType(context);
-            return GetAdapterDialect(providerType);
-        }
-        
-        public static IQueryBuilderSpecialization GetAdapterDialect(DbServer providerType)
-        {
-            return SqlQueryBuilderSpecializationMapping[providerType];
+            return DbServer!.Dialect;
         }
 
-        public static DbServer GetDatabaseType(DbContext context)
+
+        /// <summary>
+        /// Returns the Database type
+        /// </summary>
+        /// <returns></returns>
+        public static DbServerType GetDatabaseType()
         {
-            return context.Database.ProviderName.EndsWith(DbServer.Sqlite.ToString()) ? DbServer.Sqlite : DbServer.SqlServer;
+            return DbServer!.Type;
+        }
+        /// <summary>
+        /// Returns per provider QueryBuilder instance, containing a compilation of SQL queries used in EFCore.
+        /// </summary>
+        /// <returns></returns>
+        public static QueryBuilderExtensions GetQueryBuilder()
+        {
+            return DbServer!.QueryBuilder;
         }
     }
 }

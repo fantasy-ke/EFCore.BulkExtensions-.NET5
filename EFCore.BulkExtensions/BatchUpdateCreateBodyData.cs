@@ -24,7 +24,7 @@ namespace EFCore.BulkExtensions
             LambdaExpression updateExpression)
         {
             BaseSql = baseSql;
-            DatabaseType = SqlAdaptersMapping.GetDatabaseType(dbContext);
+            DatabaseType = SqlAdaptersMapping.GetDatabaseType();
             DbContext = dbContext;
             Query = query;
             RootInstanceParameterName = updateExpression.Parameters?.First()?.Name;
@@ -49,7 +49,7 @@ namespace EFCore.BulkExtensions
         }
 
         public string BaseSql { get; }
-        public DbServer DatabaseType { get; }
+        public DbServerType DatabaseType { get; }
         public DbContext DbContext { get; }
         public IQueryable Query { get; }
         public string RootInstanceParameterName { get; }

@@ -8,7 +8,7 @@ namespace EFCore.BulkExtensions.Tests
         [Fact]
         public void GetBatchSql_UpdateSqlite_ReturnsExpectedValues()
         {
-            ContextUtil.DbServer = DbServer.Sqlite;
+            ContextUtil.DbServer = DbServerType.SQLite;
 
             using var context = new TestContext(ContextUtil.GetOptions());
             (string sql, string tableAlias, string tableAliasSufixAs, _, _, _) = BatchUtil.GetBatchSql(context.Items, context, true);

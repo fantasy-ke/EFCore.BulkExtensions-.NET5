@@ -28,7 +28,7 @@ namespace EFCore.BulkExtensions.SQLAdapters.SQLite
             return IsStringConcat(binaryExpression) ? "||" : "+";
         }
 
-        public (string, string) GetBatchSqlReformatTableAliasAndTopStatement(string sqlQuery)
+        public (string, string) GetBatchSqlReformatTableAliasAndTopStatement(string sqlQuery, DbServerType databaseType)
         {
             return (string.Empty, string.Empty);
         }

@@ -31,10 +31,10 @@ namespace EFCore.BulkExtensions
             var (sql, tableAlias, _, topStatement, leadingComments, innerParameters) = GetBatchSql(query, context, isUpdate: false);
 
             innerParameters = ReloadSqlParameters(context, innerParameters.ToList()); // Sqlite requires SqliteParameters
-            var databaseType = SqlAdaptersMapping.GetDatabaseType(context);
+            var databaseType = SqlAdaptersMapping.GetDatabaseType();
 
             string resultQuery;
-            if (databaseType == DbServer.SqlServer)
+            if (databaseType == DbServerType.SQLServer)
             {
                 tableAlias = $"[{tableAlias}]";
                 int outerQueryOrderByIndex = -1;
@@ -132,7 +132,7 @@ namespace EFCore.BulkExtensions
             CreateUpdateBody(createUpdateBodyData, expression.Body);
 
             var sqlParameters = ReloadSqlParameters(context, createUpdateBodyData.SqlParameters); // Sqlite requires SqliteParameters
-            var sqlColumns = (createUpdateBodyData.DatabaseType == DbServer.SqlServer) 
+            var sqlColumns = (createUpdateBodyData.DatabaseType == DbServerType.SQLServer) 
                 ? createUpdateBodyData.UpdateColumnsSql
                 : createUpdateBodyData.UpdateColumnsSql.Replace($"[{tableAlias}].", "");
 
@@ -153,12 +153,13 @@ namespace EFCore.BulkExtensions
 
         public static List<object> ReloadSqlParameters(DbContext context, List<object> sqlParameters)
         {
-            return SqlAdaptersMapping.GetAdapterDialect(context).ReloadSqlParameters(context,sqlParameters);
+            return SqlAdaptersMapping.GetAdapterDialect().ReloadSqlParameters(context,sqlParameters);
         }
 
         public static (string, string, string, string, string, IEnumerable<object>) GetBatchSql(IQueryable query, DbContext context, bool isUpdate)
         {
-            var sqlQueryBuilder = SqlAdaptersMapping.GetAdapterDialect(context);
+            SqlAdaptersMapping.ProviderName = context.Database.ProviderName;
+            var sqlQueryBuilder = SqlAdaptersMapping.GetAdapterDialect();
             var (fullSqlQuery, innerParameters) = query.ToParametrizedSql();
 
             var (leadingComments, sqlQuery) = SplitLeadingCommentsAndMainSqlQuery(fullSqlQuery);
@@ -167,7 +168,8 @@ namespace EFCore.BulkExtensions
             string tableAliasSufixAs = string.Empty;
             string topStatement;
 
-            (tableAlias, topStatement) = sqlQueryBuilder.GetBatchSqlReformatTableAliasAndTopStatement(sqlQuery);
+            var databaseType = SqlAdaptersMapping.GetDatabaseType();
+            (tableAlias, topStatement) = sqlQueryBuilder.GetBatchSqlReformatTableAliasAndTopStatement(sqlQuery, databaseType);
 
             int indexFrom = sqlQuery.IndexOf(Environment.NewLine, StringComparison.Ordinal);
             string sql = sqlQuery.Substring(indexFrom, sqlQuery.Length - indexFrom);
@@ -347,7 +349,7 @@ namespace EFCore.BulkExtensions
                 {
                     case ExpressionType.Add:
                         CreateUpdateBody(createBodyData, binaryExpression.Left, columnName);
-                        var sqlOperator = SqlAdaptersMapping.GetAdapterDialect(createBodyData.DatabaseType)
+                        var sqlOperator = SqlAdaptersMapping.GetAdapterDialect()
                             .GetBinaryExpressionAddOperation(binaryExpression);
                         sqlColumns.Append(" " + sqlOperator);
                         CreateUpdateBody(createBodyData, binaryExpression.Right, columnName);

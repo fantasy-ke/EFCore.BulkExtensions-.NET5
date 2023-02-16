@@ -25,6 +25,8 @@ namespace EFCore.BulkExtensions
         public string TableName { get; set; }
         public string FullTableName => $"{SchemaFormated}[{TableName}]";
         public Dictionary<string, string> PrimaryKeysPropertyColumnNameDict { get; set; }
+
+        public Dictionary<string, string> EntityPKPropertyColumnNameDict { get; set; } = null!;
         public bool HasSinglePrimaryKey { get; set; }
         public bool UpdateByPropertiesAreNullable { get; set; }
 
@@ -112,7 +114,12 @@ namespace EFCore.BulkExtensions
             }
 
             //var relationalData = entityType.Relational(); relationalData.Schema relationalData.TableName // DEPRECATED in Core3.0
-            bool isSqlServer = context.Database.ProviderName.EndsWith(DbServer.SqlServer.ToString());
+            string? providerName = context.Database.ProviderName?.ToLower();
+            bool isSqlServer = providerName?.EndsWith(DbServerType.SQLServer.ToString().ToLower()) ?? false;
+            bool isNpgsql = providerName?.EndsWith(DbServerType.PostgreSQL.ToString().ToLower()) ?? false;
+            bool isSqlite = providerName?.EndsWith(DbServerType.SQLite.ToString().ToLower()) ?? false;
+            bool isMySql = providerName?.EndsWith(DbServerType.MySQL.ToString().ToLower()) ?? false;
+            bool isOracle = providerName?.StartsWith(DbServerType.Oracle.ToString().ToLower()) ?? false;
             string defaultSchema = isSqlServer ? "dbo" : null;
 
             string customSchema = null;
@@ -130,6 +137,21 @@ namespace EFCore.BulkExtensions
             Schema = customSchema ?? entityType.GetSchema() ?? defaultSchema;
             TableName = customTableName ?? entityType.GetTableName();
             ObjectIdentifier = StoreObjectIdentifier.Table(TableName, entityType.GetSchema());
+
+            string? sourceSchema = null;
+            string? sourceTableName = null;
+            if (BulkConfig.CustomSourceTableName != null)
+            {
+                sourceTableName = BulkConfig.CustomSourceTableName;
+                if (sourceTableName.Contains('.'))
+                {
+                    var tableNameSplitList = sourceTableName.Split('.');
+                    sourceSchema = tableNameSplitList[0];
+                    sourceTableName = tableNameSplitList[1];
+                }
+                BulkConfig.UseTempDB = false;
+            }
+
 
             TempTableSufix = "Temp";
 
@@ -192,14 +214,42 @@ namespace EFCore.BulkExtensions
             HasOwnedTypes = ownedTypes.Any();
             OwnedTypesDict = ownedTypes.ToDictionary(a => a.Name, a => a);
 
-            IdentityColumnName = allProperties.SingleOrDefault(a => a.IsPrimaryKey() &&
-                                                                    a.ValueGenerated == ValueGenerated.OnAdd && // ValueGenerated equals OnAdd for nonIdentity column like Guid so take only number types
-                                                                    (a.ClrType.Name.StartsWith("Byte") ||
-                                                                     a.ClrType.Name.StartsWith("SByte")||
-                                                                     a.ClrType.Name.StartsWith("Int")  ||
-                                                                     a.ClrType.Name.StartsWith("UInt") ||
-                                                                     (isSqlServer && a.ClrType.Name.StartsWith("Decimal")))
-                                                              )?.GetColumnName(ObjectIdentifier);
+            if (isSqlServer || isNpgsql || isMySql || isOracle)
+            {
+                var strategyName = SqlAdaptersMapping.DbServer!.ValueGenerationStrategy;
+                if (!strategyName.Contains(":Value"))
+                {
+                    strategyName = strategyName.Replace("Value", ":Value"); //example 'SqlServer:ValueGenerationStrategy'
+                }
+
+                foreach (var property in allProperties)
+                {
+                    var annotation = property.FindAnnotation(strategyName);
+                    bool hasIdentity = false;
+                    if (annotation != null)
+                    {
+                        hasIdentity = SqlAdaptersMapping.DbServer!.PropertyHasIdentity(annotation);
+                    }
+                    if (hasIdentity)
+                    {
+                        IdentityColumnName = property.GetColumnName(ObjectIdentifier);
+                        break;
+                    }
+                }
+            }
+
+            if (isSqlite) // SQLite no ValueGenerationStrategy
+            {
+                // for HiLo on SqlServer was returning True when should be False
+                IdentityColumnName = allProperties.SingleOrDefault(a => a.IsPrimaryKey() &&
+                                                        a.ValueGenerated == ValueGenerated.OnAdd && // ValueGenerated equals OnAdd for nonIdentity column like Guid so take only number types
+                                                        (a.ClrType.Name.StartsWith("Byte") ||
+                                                         a.ClrType.Name.StartsWith("SByte") ||
+                                                         a.ClrType.Name.StartsWith("Int") ||
+                                                         a.ClrType.Name.StartsWith("UInt") ||
+                                                         (isSqlServer && a.ClrType.Name.StartsWith("Decimal")))
+                                                  )?.GetColumnName(ObjectIdentifier);
+            }
 
             // timestamp/row version properties are only set by the Db, the property has a [Timestamp] Attribute or is configured in FluentAPI with .IsRowVersion()
             // They can be identified by the columne type "timestamp" or .IsConcurrencyToken in combination with .ValueGenerated == ValueGenerated.OnAddOrUpdate

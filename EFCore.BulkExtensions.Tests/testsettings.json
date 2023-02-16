@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "SqlServer": "Server=localhost;Database={databaseName};Trusted_Connection=True;MultipleActiveResultSets=true;",
+    "SqlServer": "Server=192.168.2.40; Database=gct_medPro_test_newvue3; User ID=sa;Password=bb123456??;MultipleActiveResultSets=True;",
     "Sqlite": "Data Source={databaseName}.db"
   }
 }

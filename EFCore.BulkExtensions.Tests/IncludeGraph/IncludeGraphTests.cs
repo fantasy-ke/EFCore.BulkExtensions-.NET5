@@ -79,9 +79,9 @@ namespace EFCore.BulkExtensions.Tests.IncludeGraph
         };
 
         [Theory]
-        [InlineData(DbServer.SqlServer)]
-        //[InlineData(DbServer.Sqlite)]
-        public async Task BulkInsertOrUpdate_EntityWithNestedObjectGraph_SavesGraphToDatabase(DbServer dbServer)
+        [InlineData(DbServerType.SQLServer)]
+        //[InlineData(DbServerType.SQLite)]
+        public async Task BulkInsertOrUpdate_EntityWithNestedObjectGraph_SavesGraphToDatabase(DbServerType dbServer)
         {
             ContextUtil.DbServer = dbServer;
 

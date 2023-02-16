@@ -71,6 +71,19 @@ namespace EFCore.BulkExtensions
         public string CustomDestinationTableName { get; set; }
 
         /// <summary>
+        ///     Source data from specified table already in Db, so input list not used and can be empty.
+        /// </summary>
+        /// <value>
+        ///     Can be set with 'TableName' only or with 'Schema.TableName' (Not supported for Sqlite).
+        /// </value>
+        public string? CustomSourceTableName { get; set; }
+
+        /// <summary>
+        ///     Only if CustomSourceTableName is set and used for specifying Source - Destination column names when they are not the same.
+        /// </summary>
+        public Dictionary<string, string>? CustomSourceDestinationMappingColumns { get; set; }
+
+        /// <summary>
         ///     Can be set to True if want to have tracking of entities from BulkRead or when SetOutputIdentity is set.
         /// </summary>
         public bool TrackingEntities { get; set; }
@@ -169,6 +182,18 @@ namespace EFCore.BulkExtensions
         ///     When set to <c>true</c> it will adding (normal) Shadow Property and persist value. It Disables automatic discrimator, so it shoud be set manually.
         /// </summary>
         public bool EnableShadowProperties { get; set; }
+
+
+        /// <summary>
+        ///     Returns value for shadow properties, EnableShadowProperties = true
+        /// </summary>
+        public Func<object, string, object?>? ShadowPropertyValue { get; set; }
+
+
+        /// <summary>
+        ///    Shadow columns used for Temporal table. Has defaults elements: 'PeriodStart' and 'PeriodEnd'. Can be changed if temporal columns have custom names.
+        /// </summary>
+        public List<string> TemporalColumns { get; set; } = new List<string> { "PeriodStart", "PeriodEnd" };
 
         /// <summary>
         ///     When set all entites that have relations with main ones from the list are also merged into theirs tables.
