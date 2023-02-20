@@ -1,4 +1,5 @@
 ﻿using EFCore.BulkExtensions.SqlAdapters;
+using EFCore.BulkExtensions.SQLAdapters;
 using EFCore.BulkExtensions.Tests.IncludeGraph.Model;
 using EFCore.BulkExtensions.Tests.ShadowProperties;
 using Microsoft.EntityFrameworkCore;

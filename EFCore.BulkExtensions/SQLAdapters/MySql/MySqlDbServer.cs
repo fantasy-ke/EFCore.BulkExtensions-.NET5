@@ -1,34 +1,35 @@
 ﻿using EFCore.BulkExtensions.SqlAdapters;
-using EFCore.BulkExtensions.SqlAdapters.MySql;
-using EFCore.BulkExtensions.SQLAdapters;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Data.Common;
 
-namespace EFCore.BulkExtensions.SqlAdapters.MySql;
-
-/// <inheritdoc/>
-public class MySqlDbServer : IDbServer
+namespace EFCore.BulkExtensions.SQLAdapters.MySql
 {
-    DbServerType IDbServer.Type => DbServerType.MySQL;
-
-    MySqlAdapter _adapter = new ();
-    ISqlOperationsAdapter IDbServer.Adapter => _adapter;
-
-    MySqlDialect _dialect = new();
-    IQueryBuilderSpecialization IDbServer.Dialect => _dialect;
-
-    QueryBuilderExtensions _queryBuilder = new SqlQueryBuilderMySql();
     /// <inheritdoc/>
-    public QueryBuilderExtensions QueryBuilder => _queryBuilder;
+    public class MySqlDbServer : IDbServer
+    {
+        DbServerType IDbServer.Type => DbServerType.MySQL;
 
-    string IDbServer.ValueGenerationStrategy => nameof(MySqlValueGenerationStrategy);
+        MySqlAdapter _adapter = new();
+        ISqlOperationsAdapter IDbServer.Adapter => _adapter;
 
-    /// <inheritdoc/>
-    public DbConnection? DbConnection { get; set; }
+        MySqlDialect _dialect = new();
+        IQueryBuilderSpecialization IDbServer.Dialect => _dialect;
 
-    /// <inheritdoc/>
-    public DbTransaction? DbTransaction { get; set; }
+        QueryBuilderExtensions _queryBuilder = new SqlQueryBuilderMySql();
+        /// <inheritdoc/>
+        public QueryBuilderExtensions QueryBuilder => _queryBuilder;
 
-    bool IDbServer.PropertyHasIdentity(IAnnotation annotation) => (MySqlValueGenerationStrategy?)annotation.Value == MySqlValueGenerationStrategy.IdentityColumn;
+        string IDbServer.ValueGenerationStrategy => nameof(MySqlValueGenerationStrategy);
+
+        /// <inheritdoc/>
+        public DbConnection? DbConnection { get; set; }
+
+        /// <inheritdoc/>
+        public DbTransaction? DbTransaction { get; set; }
+
+        bool IDbServer.PropertyHasIdentity(IAnnotation annotation) => (MySqlValueGenerationStrategy?)annotation.Value == MySqlValueGenerationStrategy.IdentityColumn;
+    }
 }
+
+

@@ -1,4 +1,4 @@
-﻿using EFCore.BulkExtensions.SqlAdapters;
+﻿using EFCore.BulkExtensions.SQLAdapters;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

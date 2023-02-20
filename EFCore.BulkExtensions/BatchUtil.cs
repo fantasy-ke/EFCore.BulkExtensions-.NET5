@@ -1,4 +1,4 @@
-using EFCore.BulkExtensions.SqlAdapters;
+using EFCore.BulkExtensions.SQLAdapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Query;

@@ -1,7 +1,7 @@
 using EFCore.BulkExtensions.SqlAdapters;
-using EFCore.BulkExtensions.SqlAdapters.MySql;
 using EFCore.BulkExtensions.SqlAdapters.SQLite;
 using EFCore.BulkExtensions.SQLAdapters;
+using EFCore.BulkExtensions.SQLAdapters.MySql;
 using EFCore.BulkExtensions.SQLAdapters.SQLServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -88,13 +88,14 @@ namespace EFCore.BulkExtensions.Tests
 
             modelBuilder.Entity<Documents>().Property(p => p.IsActive).HasDefaultValue(true);
             modelBuilder.Entity<Documents>().Property(p => p.Tag).HasDefaultValue("DefaultData");
+            modelBuilder.Entity<Documents>().HasKey(p => p.DocumentId);
 
             //modelBuilder.Entity<Log>().ToTable("Log");
             //modelBuilder.Entity<LogPersonReport>().ToTable("LogPersonReport");
 
             if (Database.IsSqlServer())
             {
-                modelBuilder.Entity<Documents>().HasKey(p => p.DocumentId);
+                
 
                 modelBuilder.Entity<UdttIntInt>(entity => { entity.HasNoKey(); });
 

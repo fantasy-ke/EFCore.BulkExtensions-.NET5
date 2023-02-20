@@ -1,4 +1,4 @@
-using EFCore.BulkExtensions.SqlAdapters;
+using EFCore.BulkExtensions.SQLAdapters;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -23,6 +23,7 @@ namespace EFCore.BulkExtensions
         public string Schema { get; set; }
         public string SchemaFormated => Schema != null ? $"[{Schema}]." : "";
         public string TableName { get; set; }
+        public string? TempSchema { get; set; }
         public string FullTableName => $"{SchemaFormated}[{TableName}]";
         public Dictionary<string, string> PrimaryKeysPropertyColumnNameDict { get; set; }
 
@@ -32,7 +33,7 @@ namespace EFCore.BulkExtensions
 
         protected string TempDBPrefix => BulkConfig.UseTempDB ? "#" : "";
         public string TempTableSufix { get; set; }
-        public string TempTableName => $"{TableName}{TempTableSufix}";
+        public string TempTableName { get; set; }
         public string FullTempTableName => $"{SchemaFormated}[{TempDBPrefix}{TempTableName}]";
         public string FullTempOutputTableName => $"{SchemaFormated}[{TempDBPrefix}{TempTableName}Output]";
 
@@ -134,9 +135,10 @@ namespace EFCore.BulkExtensions
                     customTableName = tableNameSplitList[1];
                 }
             }
+
             Schema = customSchema ?? entityType.GetSchema() ?? defaultSchema;
-            TableName = customTableName ?? entityType.GetTableName();
-            ObjectIdentifier = StoreObjectIdentifier.Table(TableName, entityType.GetSchema());
+            var entityTableName = entityType.GetTableName();
+            TableName = customTableName ?? entityTableName;
 
             string? sourceSchema = null;
             string? sourceTableName = null;
@@ -153,13 +155,23 @@ namespace EFCore.BulkExtensions
             }
 
 
-            TempTableSufix = "Temp";
-
+            TempSchema = sourceSchema ?? Schema;
+            TempTableSufix = sourceTableName != null ? "" : "Temp";
             if (BulkConfig.UniqueTableNameTempDb)
             {
-                TempTableSufix += Guid.NewGuid().ToString().Substring(0, 8); // 8 chars of Guid as tableNameSufix to avoid same name collision with other tables
-                                                                             // TODO Consider Hash
+                // 8 chars of Guid as tableNameSufix to avoid same name collision with other tables
+                TempTableSufix += Guid.NewGuid().ToString()[..8];
+                // TODO Consider Hash                                                             
             }
+            TempTableName = sourceTableName ?? $"{TableName}{TempTableSufix}";
+
+            if (entityTableName is null)
+            {
+                throw new ArgumentException("Entity does not contain a table name");
+            }
+
+            ObjectIdentifier = StoreObjectIdentifier.Table(entityTableName, entityType.GetSchema());
+
 
             var allProperties = new List<IProperty>();
             foreach (var entityProperty in entityType.GetProperties())
@@ -188,7 +200,8 @@ namespace EFCore.BulkExtensions
             }
 
             bool areSpecifiedUpdateByProperties = BulkConfig.UpdateByProperties?.Count() > 0;
-            var primaryKeys = entityType.FindPrimaryKey()?.Properties?.ToDictionary(a => a.Name, b => b.GetColumnName(ObjectIdentifier));
+            var primaryKeys = entityType.FindPrimaryKey()?.Properties?.ToDictionary(a => a.Name, b => b.GetColumnName(ObjectIdentifier) ?? string.Empty);
+            EntityPKPropertyColumnNameDict = primaryKeys ?? new Dictionary<string, string>();
 
             HasSinglePrimaryKey = primaryKeys?.Count == 1;
             PrimaryKeysPropertyColumnNameDict = areSpecifiedUpdateByProperties ? BulkConfig.UpdateByProperties.ToDictionary(a => a, b => allProperties.First(p => p.Name == b).GetColumnName(ObjectIdentifier))

@@ -1,4 +1,4 @@
-using EFCore.BulkExtensions.SqlAdapters;
+using EFCore.BulkExtensions.SQLAdapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -52,7 +52,7 @@ namespace EFCore.BulkExtensions.Tests
         {
             ContextUtil.DbServer = dbServer;
 
-            DeletePreviousDatabase();
+           // DeletePreviousDatabase();
             //new EFCoreBatchTest().RunDeleteAll(dbServer);
 
             RunInsert(isBulk);
@@ -160,7 +160,7 @@ namespace EFCore.BulkExtensions.Tests
                     IsActive = true,
                     Content = i + "ÌìÏÂµÚe",
                     Tag = "tianxia" + i
-                };z
+                };
                 entities2.Add(entity);
             }
             var entities3 = new List<Documents>();
@@ -168,9 +168,19 @@ namespace EFCore.BulkExtensions.Tests
 
             // INSERT
 
+            for (int i = 0; i <= context.Documents.ToList().Count; i++)
+            {
+                entities4.Add(context.Documents.ToList()[i]);
+                if (i > 8)
+                {
+                    break;
+                }
+            }
+            context.BulkDelete(entities4);
+
             //context.BulkInsert(entities1);
             var fd = context.Documents.ToList();
-            for (int i = 0; i < fd.Count-10; i++)
+            for (int i = 0; i < fd.Count - 10; i++)
             {
                 fd[i].ContentLength = 10;
             }

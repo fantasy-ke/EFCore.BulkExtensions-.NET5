@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EFCore.BulkExtensions.SqlAdapters
+namespace EFCore.BulkExtensions.SQLAdapters
 {
     public static class ProgressHelper
     {

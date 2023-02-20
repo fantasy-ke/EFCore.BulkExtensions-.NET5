@@ -1,13 +1,10 @@
-﻿using EFCore.BulkExtensions.SqlAdapters.MySql;
-using EFCore.BulkExtensions.SQLAdapters;
-using EFCore.BulkExtensions.SQLAdapters.SQLite;
-using EFCore.BulkExtensions.SQLAdapters.SQLServer;
+﻿using EFCore.BulkExtensions.SqlAdapters;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace EFCore.BulkExtensions.SqlAdapters
+namespace EFCore.BulkExtensions.SQLAdapters
 {
     /// <summary>
     /// A list of database servers supported by EFCore.BulkExtensions
@@ -105,7 +102,7 @@ namespace EFCore.BulkExtensions.SqlAdapters
                     }
                     else if (serverType == DbServerType.Oracle)
                     {
-                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".Oracle.OracleDbServerType");
+                        dbServerType = Type.GetType(EFCoreBulkExtensionsSqlAdaptersTEXT + ".Oracle.OracleDbServer");
                     }
 
                     var DbServerTypeInstance = Activator.CreateInstance(dbServerType ?? typeof(int));
