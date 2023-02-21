@@ -66,7 +66,7 @@ namespace EFCore.BulkExtensions
         public Dictionary<string, ValueConverter> ConvertibleColumnConverterDict { get; set; } = new Dictionary<string, ValueConverter>();
         public Dictionary<string, int> DateTime2PropertiesPrecisionLessThen7Dict { get; set; } = new Dictionary<string, int>();
 
-        public string TimeStampOutColumnType => "varbinary(8)";
+        public  string TimeStampOutColumnType => "varbinary(8)";
         public string TimeStampPropertyName { get; set; }
         public string TimeStampColumnName { get; set; }
 
@@ -695,7 +695,7 @@ namespace EFCore.BulkExtensions
             return previousPropertyColumnNamesDict;
         }
 
-        internal void UpdateReadEntities<T>(Type type, IList<T> entities, IList<T> existingEntities)
+        internal void UpdateReadEntities<T>(IList<T> entities, IList<T> existingEntities, DbContext context)
         {
             List<string> propertyNames = PropertyColumnNamesDict.Keys.ToList();
             if (HasOwnedTypes)
@@ -711,25 +711,41 @@ namespace EFCore.BulkExtensions
                 }
             }
 
-            List<string> selectByPropertyNames = PropertyColumnNamesDict.Keys.Where(a => PrimaryKeysPropertyColumnNameDict.ContainsKey(a)).ToList();
+            List<string> selectByPropertyNames = PropertyColumnNamesDict.Keys
+                .Where(a => PrimaryKeysPropertyColumnNameDict.ContainsKey(a)).ToList();
 
-            Dictionary<string, T> existingEntitiesDict = new Dictionary<string, T>();
+            Dictionary<string, T> existingEntitiesDict = new();
             foreach (var existingEntity in existingEntities)
             {
-                string uniqueProperyValues = GetUniquePropertyValues(existingEntity, selectByPropertyNames, FastPropertyDict);
+                string uniqueProperyValues = GetUniquePropertyValues(existingEntity!, selectByPropertyNames, FastPropertyDict);
                 existingEntitiesDict.TryAdd(uniqueProperyValues, existingEntity);
             }
 
             for (int i = 0; i < NumberOfEntities; i++)
             {
                 T entity = entities[i];
-                string uniqueProperyValues = GetUniquePropertyValues(entity, selectByPropertyNames, FastPropertyDict);
-                if (existingEntitiesDict.TryGetValue(uniqueProperyValues, out T existingEntity))
+                string uniqueProperyValues = GetUniquePropertyValues(entity!, selectByPropertyNames, FastPropertyDict);
+
+                existingEntitiesDict.TryGetValue(uniqueProperyValues, out T? existingEntity);
+                bool isPostgreSQL = context.Database.ProviderName?.EndsWith(DbServerType.PostgreSQL.ToString()) ?? false;
+                if (existingEntity == null && isPostgreSQL && i < existingEntities.Count)
+                {
+                    existingEntity = existingEntities[i]; // TODO check if BinaryImport with COPY on Postgres preserves order
+                }
+                if (existingEntity != null)
                 {
                     foreach (var propertyName in propertyNames)
                     {
-                        var propertyValue = FastPropertyDict[propertyName].Get(existingEntity);
-                        FastPropertyDict[propertyName].Set(entity, propertyValue);
+                        if (FastPropertyDict.ContainsKey(propertyName))
+                        {
+                            var propertyValue = FastPropertyDict[propertyName].Get(existingEntity);
+                            FastPropertyDict[propertyName].Set(entity!, propertyValue);
+                        }
+                        else
+                        {
+                            //TODO: Shadow FK property update
+                        }
+
                     }
                 }
             }
@@ -990,6 +1006,43 @@ namespace EFCore.BulkExtensions
             }
             return expression;
         }
+
+        /// <summary>
+        /// Loads the ouput entities
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="type"></param>
+        /// <param name="sqlSelect"></param>
+        /// <returns></returns>
+        public List<T> LoadOutputEntities<T>(DbContext context, Type type, string sqlSelect) where T : class
+        {
+            List<T> existingEntities;
+            if (typeof(T) == type)
+            {
+                Expression<Func<DbContext, IQueryable<T>>> expression = GetQueryExpression<T>(sqlSelect, false);
+                var compiled = EF.CompileQuery(expression); // instead using Compiled queries
+                existingEntities = compiled(context).ToList();
+            }
+            else // TODO: Consider removing
+            {
+                Expression<Func<DbContext, IEnumerable>> expression = GetQueryExpression(type, sqlSelect, false);
+                var compiled = EF.CompileQuery(expression); // instead using Compiled queries
+                existingEntities = compiled(context).Cast<T>().ToList();
+            }
+            return existingEntities;
+        }
+
+        internal void ReplaceReadEntities<T>(IList<T> entities, IList<T> existingEntities)
+        {
+            entities.Clear();
+
+            foreach (var existingEntity in existingEntities)
+            {
+                entities.Add(existingEntity);
+            }
+        }
+
         #endregion
 
         // Currently not used until issue from previous segment is fixed in EFCore

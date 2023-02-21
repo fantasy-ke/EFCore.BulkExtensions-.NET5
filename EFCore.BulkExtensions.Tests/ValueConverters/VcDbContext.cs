@@ -21,7 +21,7 @@ namespace EFCore.BulkExtensions.Tests.ValueConverters
             modelBuilder.Entity<VcModel>(cfg =>
             {
                 cfg.HasKey(y => y.Id);
-                cfg.Property(y => y.Id).UseIdentityColumn();
+                //cfg.Property(y => y.Id).UseIdentityColumn();
 
                 cfg.Property(y => y.Enum).HasColumnType("nvarchar(4000)").HasConversion<string>();
 

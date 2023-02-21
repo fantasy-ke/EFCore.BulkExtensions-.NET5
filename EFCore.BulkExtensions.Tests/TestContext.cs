@@ -2,13 +2,16 @@ using EFCore.BulkExtensions.SqlAdapters;
 using EFCore.BulkExtensions.SqlAdapters.SQLite;
 using EFCore.BulkExtensions.SQLAdapters;
 using EFCore.BulkExtensions.SQLAdapters.MySql;
+using EFCore.BulkExtensions.SQLAdapters.Oracle;
 using EFCore.BulkExtensions.SQLAdapters.SQLServer;
+using GCT.MedPro.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using NetTopologySuite.Geometries;
+using Microsoft.EntityFrameworkCore.Extensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -88,14 +91,22 @@ namespace EFCore.BulkExtensions.Tests
 
             modelBuilder.Entity<Documents>().Property(p => p.IsActive).HasDefaultValue(true);
             modelBuilder.Entity<Documents>().Property(p => p.Tag).HasDefaultValue("DefaultData");
-            modelBuilder.Entity<Documents>().HasKey(p => p.DocumentId);
+            modelBuilder.Entity<Documents>().HasKey(p => p.Id);
+
+            if (ContextUtil.DbServer == DbServerType.Oracle)
+            {
+                modelBuilder.MedProUseOracleTableMapping();
+            }
+
+
+
 
             //modelBuilder.Entity<Log>().ToTable("Log");
             //modelBuilder.Entity<LogPersonReport>().ToTable("LogPersonReport");
 
             if (Database.IsSqlServer())
             {
-                
+
 
                 modelBuilder.Entity<UdttIntInt>(entity => { entity.HasNoKey(); });
 
@@ -137,12 +148,14 @@ namespace EFCore.BulkExtensions.Tests
         }
     }
 
+
     public static class ContextUtil
     {
         // TODO: Pass DbService through all the GetOptions methods as a parameter and eliminate this property so the automated tests
         // are thread safe
         static IDbServer? _dbServerMapping;
         static DbServerType _dbServerValue;
+
 
         // TODO: Pass DbService through all the GetOptions methods as a parameter and eliminate this property so the automated tests
         // are thread safe
@@ -158,7 +171,7 @@ namespace EFCore.BulkExtensions.Tests
                     DbServerType.SQLite => new SqlLiteDbServer(),
                     // DbServerType.PostgreSQL => new SqlAdapters.PostgreSql.PostgreSqlDbServer(),
                     DbServerType.MySQL => new MySqlDbServer(),
-                    //DbServerType.Oracle => new SqlAdapters.Oracle.OracleDbServer(),
+                    DbServerType.Oracle => new OracleDbServer(),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -201,6 +214,11 @@ namespace EFCore.BulkExtensions.Tests
                 string connectionString = GetMySqlConnectionString(databaseName);
                 optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             }
+            else if (dbServerType == DbServerType.Oracle)
+            {
+                string connectionString = GetOracleConnectionString(databaseName);
+                optionsBuilder.UseOracle(connectionString);
+            }
             else
             {
                 throw new NotSupportedException($"Database {dbServerType} is not supported. Only SQL Server and SQLite are Currently supported.");
@@ -236,6 +254,11 @@ namespace EFCore.BulkExtensions.Tests
         public static string GetMySqlConnectionString(string databaseName)
         {
             return GetConfiguration().GetConnectionString("MySql");
+        }
+
+        public static string GetOracleConnectionString(string databaseName)
+        {
+            return GetConfiguration().GetConnectionString("Oracle");
         }
     }
 
@@ -330,7 +353,7 @@ namespace EFCore.BulkExtensions.Tests
     }
 
     // For testing Computed columns Default values
-    public class Documents
+    public class Documents : Entity<Guid>
     {
         //[DefaultValueSql("NEWID()")] // no native [DefaultValueSql] annotation so this is configured via FluentAPI in modelBuilder
         public Guid DocumentId { get; set; }

@@ -2,6 +2,8 @@
   "ConnectionStrings": {
     "SqlServer": "Server=192.168.2.40; Database=gct_medPro_test_newvue3; User ID=sa;Password=bb123456??;MultipleActiveResultSets=True;",
     "MySql": "Server=192.168.2.41;Port=3307;Database=mysqlTest;Uid=root;Pwd=123456;charset=utf8;TreatTinyAsBoolean=false;AllowLoadLocalInfile=true",
-    "Sqlite": "Data Source={databaseName}.db"
+    "Sqlite": "Data Source={databaseName}.db",
+    "Oracle": "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.2.41)(PORT=1521))(CONNECT_DATA=(SERVER = DEDICATED)(SERVICE_NAME= helowin)));User Id=ZK;Password=123456"
+
   }
 }

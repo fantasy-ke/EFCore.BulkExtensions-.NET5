@@ -20,7 +20,7 @@ namespace EFCore.BulkExtensions.Tests.ShadowProperties
             modelBuilder.Entity<SpModel>(cfg =>
             {
                 cfg.HasKey(y => y.Id);
-                cfg.Property(y => y.Id).UseIdentityColumn();
+                //cfg.Property(y => y.Id).UseIdentityColumn();
 
                 // Define the shadow properties
                 cfg.Property<long>(SpModel.SpLong);
