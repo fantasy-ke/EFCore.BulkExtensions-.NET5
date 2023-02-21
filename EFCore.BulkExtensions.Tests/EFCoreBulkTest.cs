@@ -95,6 +95,30 @@ namespace EFCore.BulkExtensions.Tests
             //CheckQueryCache();
         }
 
+        [Theory]
+        [InlineData(DbServerType.PostgreSQL, true)]
+        //[InlineData(DbServerType.SQLServer, false)] // for speed comparison with Regular EF CUD operations
+        public void OperationsPostgreSQLTest(DbServerType dbServer, bool isBulk)
+        {
+            ContextUtil.DbServer = dbServer;
+
+            // DeletePreviousDatabase();
+            //new EFCoreBatchTest().RunDeleteAll(dbServer);
+
+            RunInsert(isBulk);
+            //RunInsertOrUpdate(isBulk, dbServer);
+            //RunUpdate(isBulk, dbServer);
+
+            //RunRead(isBulk);
+
+            //if (dbServer == DbServerType.SQLServer)
+            //{
+            //    RunInsertOrUpdateOrDelete(isBulk); // Not supported for Sqlite (has only UPSERT), instead use BulkRead, then split list into sublists and call separately Bulk methods for Insert, Update, Delete.
+            //}
+            //RunDelete(isBulk, dbServer);
+
+            //CheckQueryCache();
+        }
 
         [Theory]
         [InlineData(DbServerType.SQLServer)]
@@ -200,7 +224,7 @@ namespace EFCore.BulkExtensions.Tests
             for (int i = 0; i <= context.Documents.ToList().Count; i++)
             {
                 entities4.Add(context.Documents.ToList()[i]);
-                if (i > 10)
+                if (i > 5)
                 {
                     break;
                 }
@@ -208,14 +232,14 @@ namespace EFCore.BulkExtensions.Tests
             context.BulkDelete(entities4);
 
             //context.BulkInsert(entities1);
-            var fd = context.Documents.ToList();
-            for (int i = 0; i < fd.Count - 10; i++)
-            {
-                fd[i].ContentLength = 50;
-            }
-            entities3 = fd;
+            //var fd = context.Documents.ToList();
+            //for (int i = 0; i < fd.Count - 15; i++)
+            //{
+            //    fd[i].ContentLength = 50;
+            //}
+            //entities1.AddRange(fd);
 
-            context.BulkUpdate(fd);
+            //context.BulkInsertOrUpdate(entities1);
 
 
             var entities = new List<Item>();

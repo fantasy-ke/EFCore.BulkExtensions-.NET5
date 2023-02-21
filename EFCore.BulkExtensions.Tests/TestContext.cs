@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using EFCore.BulkExtensions.SQLAdapters.PostgreSql;
 
 namespace EFCore.BulkExtensions.Tests
 {
@@ -172,6 +173,7 @@ namespace EFCore.BulkExtensions.Tests
                     // DbServerType.PostgreSQL => new SqlAdapters.PostgreSql.PostgreSqlDbServer(),
                     DbServerType.MySQL => new MySqlDbServer(),
                     DbServerType.Oracle => new OracleDbServer(),
+                    DbServerType.PostgreSQL => new PostgreSqlDbServer(),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -219,6 +221,11 @@ namespace EFCore.BulkExtensions.Tests
                 string connectionString = GetOracleConnectionString(databaseName);
                 optionsBuilder.UseOracle(connectionString);
             }
+            else if (dbServerType == DbServerType.PostgreSQL)
+            {
+                string connectionString = GetPostgreSQLConnectionString();
+                optionsBuilder.UseNpgsql(connectionString);
+            }
             else
             {
                 throw new NotSupportedException($"Database {dbServerType} is not supported. Only SQL Server and SQLite are Currently supported.");
@@ -259,6 +266,11 @@ namespace EFCore.BulkExtensions.Tests
         public static string GetOracleConnectionString(string databaseName)
         {
             return GetConfiguration().GetConnectionString("Oracle");
+        }
+
+        public static string GetPostgreSQLConnectionString()
+        {
+            return GetConfiguration().GetConnectionString("PostgreSql");
         }
     }
 

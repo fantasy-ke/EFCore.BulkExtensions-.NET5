@@ -59,6 +59,11 @@ public class SqlQueryBuilderSqlite : SQLAdapters.QueryBuilderExtensions
             q += $" ON CONFLICT({commaSeparatedPrimaryKeys}) DO UPDATE" +
                  $" SET {commaSeparatedColumnsEquals}" +
                  $" WHERE {commaANDSeparatedPrimaryKeys}";
+
+            if (tableInfo.BulkConfig.OnConflictUpdateWhereSql != null)
+            {
+                q += $" AND {tableInfo.BulkConfig.OnConflictUpdateWhereSql($"[{tableName}]", "excluded")}";
+            }
         }
 
         tableInfo.PropertyColumnNamesDict = tempDict;
