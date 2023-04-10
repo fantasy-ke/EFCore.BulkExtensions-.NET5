@@ -423,7 +423,7 @@ namespace EFCore.BulkExtensions
             PropertyColumnNamesCompareDict = propertiesOnCompare.ToDictionary(a => a.Name, b => b.GetColumnName(ObjectIdentifier).Replace("]", "]]"));
             PropertyColumnNamesUpdateDict = propertiesOnUpdate.ToDictionary(a => a.Name, b => b.GetColumnName(ObjectIdentifier).Replace("]", "]]"));
 
-            if (loadOnlyPKColumn)
+            if (loadOnlyPKColumn && !isOracle)
             {
                 if (PrimaryKeysPropertyColumnNameDict.Count() == 0)
                     throw new InvalidBulkConfigException("If no PrimaryKey is defined operation requres bulkConfig set with 'UpdatedByProperties'.");
